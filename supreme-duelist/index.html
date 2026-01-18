@@ -60,17 +60,22 @@
     }
 
     
-    var config = {
-    codeUrl: "https://raw.githubusercontent.com/CoderandHacker69/Ports/main/supreme-duelist/Build/YTPlayables.wasm",
-    frameworkUrl: "https://raw.githubusercontent.com/CoderandHacker69/Ports/main/supreme-duelist/Build/YTPlayables.framework.js",
-    dataUrl: "https://raw.githubusercontent.com/CoderandHacker69/Ports/main/supreme-duelist/Build/YTPlayables.data",
-    streamingAssetsUrl: "https://raw.githubusercontent.com/CoderandHacker69/Ports/main/supreme-duelist/Build/StreamingAssets",
+	var buildUrl = "Build"; // Local folder for loader, data, framework
+	var loaderUrl = buildUrl + "/YTPlayables.loader.js";
+
+	var config = {
+    // Use ONLY this single URL for WASM
+    codeUrl: "https://raw.githubusercontent.com/CoderandHacker69/Ports/refs/heads/main/supreme-duelist/Build/YTPlayables.wasm",
+
+    // Keep everything else local
+    frameworkUrl: buildUrl + "/YTPlayables.framework.js",
+    dataUrl: buildUrl + "/YTPlayables.data",
+    streamingAssetsUrl: buildUrl + "/StreamingAssets",
     companyName: "Neron's Brother",
     productName: "Supreme Duelist",
     productVersion: "1.0.16.0002",
     showBanner: unityShowBanner,
-};
-
+	};
 
     // By default, Unity keeps WebGL canvas render target size matched with
     // the DOM size of the canvas element (scaled by window.devicePixelRatio)
