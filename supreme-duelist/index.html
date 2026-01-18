@@ -199,10 +199,10 @@
 
     
 
-    function GetGzipUrl(url)
-    {
-        return url + "ip";
-    }
+    function GetGzipUrl(url) {
+  return url; // already ends in .gz
+	}
+
         
     //
     // Does not load .js properly, so rename framework above WITHOUT .gz and decompress
@@ -223,7 +223,10 @@
               .then(async unzippedBlob =>
               {
                 console.log("gzip should be decompressed!");
-                unzippedBlob.type = "application/wasm";
+                unzippedBlob = new Blob([await unzippedBlob.arrayBuffer()], {
+	type: "application/wasm"
+	});
+
                 decompressedUrl = window.URL.createObjectURL(unzippedBlob);
                 console.log("decompressed gzip at: " + decompressedUrl);
 
