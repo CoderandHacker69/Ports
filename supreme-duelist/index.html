@@ -1,3 +1,6 @@
+<!-- Ported By CoderandHacker69 -->
+
+
 <!DOCTYPE html><html lang="en-us"><head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -6,7 +9,7 @@
 
   <title>YT Game Wrapper WebGL Template</title>
   <link rel="stylesheet" href="css/style.css" nonce="">
-  <script src="https://www.youtube.com/game_api/v1" nonce="">// Load YT Game API code</script>
+  <script src="https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/supreme-duelist/ytgame.js" nonce="">// Load YT Game API code</script>
 </head>
 <base href="https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/supreme-duelist/">
 <body>
@@ -59,9 +62,9 @@
     var buildUrl = "Build";
     var loaderUrl = buildUrl + "/YTPlayables.loader.js";
     var config = {
-      dataUrl: buildUrl + "/YTPlayables.data.gz",
-      frameworkUrl: buildUrl + "/YTPlayables.framework.js.gz",
-        codeUrl: buildUrl + "/YTPlayables.wasm.gz",
+      dataUrl: buildUrl + "/YTPlayables.data",
+      frameworkUrl: buildUrl + "/YTPlayables.framework.js",
+        codeUrl: buildUrl + "/YTPlayables.wasm",
       streamingAssetsUrl: "StreamingAssets",
       companyName: "Neron's Brother",
       productName: "Supreme Duelist",
@@ -199,10 +202,10 @@
 
     
 
-    function GetGzipUrl(url) {
-  return url; // already ends in .gz
-	}
-
+    function GetGzipUrl(url)
+    {
+        return url;
+    }
         
     //
     // Does not load .js properly, so rename framework above WITHOUT .gz and decompress
@@ -223,10 +226,7 @@
               .then(async unzippedBlob =>
               {
                 console.log("gzip should be decompressed!");
-                unzippedBlob = new Blob([await unzippedBlob.arrayBuffer()], {
-	type: "application/wasm"
-	});
-
+                unzippedBlob.type = "application/wasm";
                 decompressedUrl = window.URL.createObjectURL(unzippedBlob);
                 console.log("decompressed gzip at: " + decompressedUrl);
 
