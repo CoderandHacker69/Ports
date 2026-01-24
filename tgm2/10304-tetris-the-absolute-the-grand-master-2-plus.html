@@ -607,9 +607,9 @@
 
     });
     EJS_player = '#game';
-    EJS_gameUrl = 'https://filesus3.retrogames.cc/rom/19/new/tgm2p.zip';
-        EJS_gameParentUrl = 'https://filesus3.retrogames.cc/rom/19/new/tgm2.zip';    EJS_core = 'arcade';
-    EJS_biosUrl = '/bios/arcade.7z';
+    EJS_gameUrl = 'https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/tgm2/roms/tgm2.zip';
+        EJS_gameParentUrl = 'https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/tgm2/roms/tgm2.zip';    EJS_core = 'arcade';
+    EJS_biosUrl = 'https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/tgm2/bios/arcade.7z';
     EJS_onGameStart = function() {
         console.log('start');
         $.post('/ajax/start-game', {id:10304, rid:0}, function(ret) {});
