@@ -37,7 +37,7 @@
     return merged;
   }
 
-  // Merge split .data.unityweb parts
+  
   const dataBlob = new Blob([
     await fetchAndMerge([
       "Build/ZN1_webTest.data.unityweb.part1",
@@ -47,7 +47,7 @@
 
   const dataURL = URL.createObjectURL(dataBlob);
 
-  // Patch UnityLoader download system
+
   const originalXHR = window.XMLHttpRequest;
   function PatchedXHR() {
     const xhr = new originalXHR();
@@ -62,7 +62,7 @@
   }
   window.XMLHttpRequest = PatchedXHR;
 
-  // Start Unity
+
   UnityLoader.instantiate(
     "gameContainer",
     "Build/ZN1_webTest.json",
