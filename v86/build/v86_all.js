@@ -11747,6 +11747,8 @@ function $onpopstate$$module$src$browser$main$$() {
   location.reload();
 }
 function $push_state$$module$src$browser$main$$($params$jscomp$1_search$$) {
-  window.history.pushState && ($params$jscomp$1_search$$ = "?" + Array.from($params$jscomp$1_search$$.entries()).map(([$key$jscomp$42$$, $value$jscomp$197$$]) => $key$jscomp$42$$ + "=" + $value$jscomp$197$$.replace(/[?&=#+]/g, encodeURIComponent)).join("&"), window.history.pushState({search:$params$jscomp$1_search$$}, "", $params$jscomp$1_search$$));
+  window.history.pushState &&
+    window.history.pushState({ search: "" }, "", window.location.pathname);
 }
+
 ;
