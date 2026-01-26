@@ -1,21 +1,74 @@
 <!DOCTYPE html>
 <html lang="ru-ru">
 <head>
-	<base href="https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/fnaf-the-killer-in-purple/">
-<meta charset="utf-8">
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>idkwhatfortitledeathimsorry</title>
-<link rel="shortcut icon" href="TemplateData/favicon.ico">
-<link rel="stylesheet" href="TemplateData/style.css">
-<script src="TemplateData/UnityProgress.js"></script>
-<script src="Build/UnityLoader.js"></script>
-<script>
-      var gameInstance = UnityLoader.instantiate("gameContainer", "Build/ZN1_webTest.json", {onProgress: UnityProgress});
-    </script>
+  <base href="https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/fnaf-the-killer-in-purple/">
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>idkwhatfortitledeathimsorry</title>
+
+  <link rel="shortcut icon" href="TemplateData/favicon.ico">
+  <link rel="stylesheet" href="TemplateData/style.css">
+  <script src="TemplateData/UnityProgress.js"></script>
+  <script src="Build/UnityLoader.js"></script>
 </head>
+
 <body>
 <div class="webgl-content">
-<div id="gameContainer" style="width: 900px; height: 600px;"></div>
+  <div id="gameContainer" style="width: 900px; height: 600px;"></div>
 </div>
+
+<script>
+(async () => {
+  async function fetchAndMerge(parts) {
+    const buffers = [];
+    for (const p of parts) {
+      const r = await fetch(p);
+      if (!r.ok) throw new Error("Failed to load " + p);
+      buffers.push(await r.arrayBuffer());
+    }
+
+    const total = buffers.reduce((s, b) => s + b.byteLength, 0);
+    const merged = new Uint8Array(total);
+    let offset = 0;
+    for (const b of buffers) {
+      merged.set(new Uint8Array(b), offset);
+      offset += b.byteLength;
+    }
+    return merged;
+  }
+
+  // Merge split .data.unityweb parts
+  const dataBlob = new Blob([
+    await fetchAndMerge([
+      "Build/ZN1_webTest.data.unityweb.part1",
+      "Build/ZN1_webTest.data.unityweb.part2"
+    ])
+  ], { type: "application/octet-stream" });
+
+  const dataURL = URL.createObjectURL(dataBlob);
+
+  // Patch UnityLoader download system
+  const originalXHR = window.XMLHttpRequest;
+  function PatchedXHR() {
+    const xhr = new originalXHR();
+    const open = xhr.open;
+    xhr.open = function(method, url) {
+      if (url.includes("ZN1_webTest.data.unityweb")) {
+        arguments[1] = dataURL;
+      }
+      return open.apply(this, arguments);
+    };
+    return xhr;
+  }
+  window.XMLHttpRequest = PatchedXHR;
+
+  // Start Unity
+  UnityLoader.instantiate(
+    "gameContainer",
+    "Build/ZN1_webTest.json",
+    { onProgress: UnityProgress }
+  );
+})();
+</script>
 </body>
 </html>
