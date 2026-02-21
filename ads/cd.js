@@ -6,7 +6,7 @@ try{
 	if (typeof(afg) == "undefined")
 		afg = {};
 
-	afg.url = "https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports@main/ads/index.html" + afgSeq + "&aid=" + Math.random();
+	afg.url = "https://17655195-s.codehs.io/index.html" + afgSeq + "&aid=" + Math.random();
 
 	if (afg.u == undefined)
 		afg.u = 0;
