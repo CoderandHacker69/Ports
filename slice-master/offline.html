@@ -8,10 +8,19 @@
     <link rel="manifest" href="manifest.json">
     <style></style>
     <title>Slice Master</title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.3/dist/jquery.min.js"></script>
 
     <script src="playcanvas-stable.min.js"></script>
     <script src="settings.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(function(reg){
+                console.log('Service worker registered:', reg.scope);
+            }).catch(function(err){
+                console.log('Service worker registration failed:', err);
+            });
+        }
+    </script>
 </head>
 <body>
     <script src="modules.js"></script>
