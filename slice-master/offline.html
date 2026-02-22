@@ -1,25 +1,49 @@
 ﻿<!doctype html>
 <html>
 <head>
-    <base href="https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/"/>
+    <base href="./"/>
     <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover' />
     <meta charset='utf-8'>
     <link rel="stylesheet" type="text/css" href="styles.css">
     <link rel="manifest" href="manifest.json">
     <style></style>
     <title>Slice Master</title>
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.3/dist/jquery.min.js"></script>
+    <script src="jquery.min.js"></script>
 
     <script src="playcanvas-stable.min.js"></script>
     <script src="settings.js"></script>
     <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(function(reg){
-                console.log('Service worker registered:', reg.scope);
-            }).catch(function(err){
-                console.log('Service worker registration failed:', err);
-            });
+        // Only try to register service worker on secure origins or localhost
+        try {
+            const isSecure = (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+            if ('serviceWorker' in navigator && isSecure) {
+                navigator.serviceWorker.register('sw.js').then(function(reg){
+                    console.log('Service worker registered:', reg.scope);
+                }).catch(function(err){
+                    console.log('Service worker registration failed:', err);
+                });
+            } else {
+                console.log('Skipping service worker registration (insecure origin or file://).');
+            }
+        } catch (e) {
+            console.log('Service worker registration error:', e);
         }
+
+        // Resume AudioContext on first user gesture to avoid autoplay blocking
+        (function attachAudioResume(){
+            function resumeAudio(){
+                try {
+                    const ac = window.AudioContext || window.webkitAudioContext;
+                    if (ac && window.__pc_audio_context && window.__pc_audio_context.state === 'suspended') {
+                        window.__pc_audio_context.resume();
+                    }
+                } catch(e){}
+                window.removeEventListener('click', resumeAudio);
+                window.removeEventListener('keydown', resumeAudio);
+            }
+            window.addEventListener('click', resumeAudio, { once: true });
+            window.addEventListener('keydown', resumeAudio, { once: true });
+        })();
     </script>
 </head>
 <body>
