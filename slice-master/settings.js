@@ -1,5 +1,6 @@
-window.ASSET_PREFIX = "";
-window.SCRIPT_PREFIX = "";
+// Force PlayCanvas to load assets and scripts from jsDelivr CDN
+window.ASSET_PREFIX = "https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/";
+window.SCRIPT_PREFIX = "https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/";
 window.SCENE_PATH = "https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/1776632.json";
 window.CONTEXT_OPTIONS = {
     'antialias': true,

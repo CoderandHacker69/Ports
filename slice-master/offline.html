@@ -1,36 +1,13 @@
 ﻿<!doctype html>
 <html>
 <head>
-    <!-- base will be set dynamically to prefer jsDelivr when online -->
-    <script>
-        (function(){
-            // CDN-first: always use jsDelivr as the base so all relative assets load from CDN
-            var cdnBase = 'https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/';
-            var baseEl = document.createElement('base');
-            baseEl.href = cdnBase;
-            document.head.appendChild(baseEl);
+    <!-- Force all relative resources to load from jsDelivr CDN -->
+    <base href="https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/">
 
-            // Helper to load scripts in sequence (CDN-first)
-            function loadScripts(list, index){
-                if(index>=list.length) return;
-                var s = document.createElement('script');
-                s.src = list[index];
-                s.onload = function(){ loadScripts(list, index+1); };
-                s.onerror = function(){ console.warn('Failed loading', list[index]); loadScripts(list, index+1); };
-                document.head.appendChild(s);
-            }
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.3/dist/jquery.min.js"></script>
 
-            // Always load jQuery from jsDelivr, then other assets via relative paths (resolved to CDN by base)
-            loadScripts([
-                'https://cdn.jsdelivr.net/npm/jquery@3.6.3/dist/jquery.min.js',
-                'playcanvas-stable.min.js',
-                'settings.js',
-                'modules.js',
-                'start.js',
-                'loading.js'
-            ], 0);
-        })();
-    </script>
+    <script src="playcanvas-stable.min.js"></script>
+    <script src="settings.js"></script>
     <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover' />
     <meta charset='utf-8'>
     <link rel="stylesheet" type="text/css" href="styles.css">
@@ -73,6 +50,8 @@
     </script>
 </head>
 <body>
-    <!-- Modules and app scripts are loaded from the head loader to guarantee order -->
+    <script src="modules.js"></script>
+    <script src="start.js"></script>
+    <script src="loading.js"></script>
 </body>
 </html>
