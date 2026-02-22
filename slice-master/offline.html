@@ -4,29 +4,13 @@
     <!-- base will be set dynamically to prefer jsDelivr when online -->
     <script>
         (function(){
-            // Suppress noisy FBX loading log when running locally or offline
-            try {
-                var _origLog = console.log.bind(console);
-                var _origInfo = console.info.bind(console);
-                var _origWarn = console.warn.bind(console);
-                function _filterArgs(args){
-                    for(var i=0;i<args.length;i++){
-                        try{ if(typeof args[i]==='string' && args[i].indexOf('FBX data loading')!==-1) return true; }catch(e){}
-                    }
-                    return false;
-                }
-                console.log = function(){ if(!_filterArgs(arguments)) _origLog.apply(console,arguments); };
-                console.info = function(){ if(!_filterArgs(arguments)) _origInfo.apply(console,arguments); };
-                console.warn = function(){ if(!_filterArgs(arguments)) _origWarn.apply(console,arguments); };
-            } catch(e){}
-
-        
+            // CDN-first: always use jsDelivr as the base so all relative assets load from CDN
             var cdnBase = 'https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/';
             var baseEl = document.createElement('base');
-            baseEl.href = navigator.onLine ? cdnBase : './';
+            baseEl.href = cdnBase;
             document.head.appendChild(baseEl);
 
-            // Helper to load scripts in sequence
+            // Helper to load scripts in sequence (CDN-first)
             function loadScripts(list, index){
                 if(index>=list.length) return;
                 var s = document.createElement('script');
@@ -36,9 +20,15 @@
                 document.head.appendChild(s);
             }
 
-            var jquerySrc = navigator.onLine ? 'https://cdn.jsdelivr.net/npm/jquery@3.6.3/dist/jquery.min.js' : 'jquery.min.js';
-            // Load core libs first, then app modules in order to avoid race conditions
-            loadScripts([jquerySrc, 'playcanvas-stable.min.js', 'settings.js', 'modules.js', 'start.js', 'loading.js'], 0);
+            // Always load jQuery from jsDelivr, then other assets via relative paths (resolved to CDN by base)
+            loadScripts([
+                'https://cdn.jsdelivr.net/npm/jquery@3.6.3/dist/jquery.min.js',
+                'playcanvas-stable.min.js',
+                'settings.js',
+                'modules.js',
+                'start.js',
+                'loading.js'
+            ], 0);
         })();
     </script>
     <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover' />
