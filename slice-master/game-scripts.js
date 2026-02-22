@@ -1723,7 +1723,7 @@ Input.prevMouseX = 0,
             }(_0x1318),
             function sl__(t) {
                 var o = _0x3e45
-                    , e = !0;
+                    , e = !1; // force downstream host-check skip when running locally/file://
                 function _0x431caf(t) {
                     for (var o = _0x3e45, n = t.map((function (t) {
                         return atob(t)
