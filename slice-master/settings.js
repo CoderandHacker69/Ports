@@ -17,7 +17,12 @@ window.INPUT_SETTINGS = {
     useGamepads: false,
     useTouch: true
 };
-pc.script.legacy = false;
 window.PRELOAD_MODULES = [
-    {'moduleName' : 'Ammo', 'glueUrl' : 'https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/files/assets/139011543/1/ammo.wasm.js', 'wasmUrl' : 'https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/files/assets/139011544/1/ammo.wasm.wasm', 'fallbackUrl' : 'https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/files/assets/139011542/1/ammo.js', 'preload' : true},
+{
+    moduleName: 'Ammo',
+    glueUrl: 'https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/files/assets/139011543/1/ammo.wasm.js',
+    wasmUrl: 'https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/files/assets/139011544/1/ammo.wasm.wasm',
+    fallbackUrl: 'https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/files/assets/139011542/1/ammo.js',
+    preload: true
+}
 ];
