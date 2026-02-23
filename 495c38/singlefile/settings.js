@@ -1,5 +1,4 @@
-var isLocalFile = window.location.protocol === 'file:';
-var baseUrl = isLocalFile ? '' : 'https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports@tree/fix-branch-name/495c38/singlefile/';
+var baseUrl = 'https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports@fix-branch-name/495c38/singlefile/';
 
 window.ASSET_PREFIX = baseUrl;
 window.SCRIPT_PREFIX = baseUrl;
