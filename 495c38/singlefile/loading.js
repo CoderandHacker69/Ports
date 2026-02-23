@@ -177,7 +177,7 @@ function dg_hide_loading_pls() {
 	}
     
     var splash = document.getElementById('application-splash-wrapper');
-    splash.parentElement.removeChild(splash);
+    if (splash && splash.parentElement) splash.parentElement.removeChild(splash);
 }
 
 pc.script.createLoadingScreen(function (app) {
