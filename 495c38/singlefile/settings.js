@@ -1,5 +1,8 @@
-window.ASSET_PREFIX = "https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/singlefile/";
-window.SCRIPT_PREFIX = "https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/singlefile/";
+var isLocalFile = window.location.protocol === 'file:';
+var baseUrl = isLocalFile ? '' : 'https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports@tree/fix-branch-name/495c38/singlefile/';
+
+window.ASSET_PREFIX = baseUrl;
+window.SCRIPT_PREFIX = baseUrl;
 window.SCENE_PATH = "1776632.json";
 window.CONTEXT_OPTIONS = {
     'antialias': true,
