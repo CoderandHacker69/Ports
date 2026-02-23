@@ -1,0 +1,135 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Slice Master</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/styles.css">
+
+    <!-- Manifest -->
+    <link rel="manifest" href="https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/manifest.json">
+
+    <!-- jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.3/dist/jquery.min.js"></script>
+
+    <!-- PlayCanvas -->
+    <script src="https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/playcanvas-stable.min.js"></script>
+    <script>
+// Override PlayCanvas FBX loader logging
+if (!window._pc_original_console_log) {
+    window._pc_original_console_log = console.log;
+}
+
+console.log = function(...args) {
+    // Suppress FBX loading messages
+    if (args.length > 0 && typeof args[0] === 'string' && args[0].includes('FBX data loading')) {
+        return; // ignore
+    }
+    window._pc_original_console_log.apply(console, args);
+};
+</script>
+
+    <script>
+        // -------------------------------
+        // PlayCanvas settings
+        // -------------------------------
+        window.ASSET_PREFIX = "https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/";
+        window.SCENE_PATH = window.ASSET_PREFIX + "1776632.json";
+        window.CONTEXT_OPTIONS = { antialias:true, alpha:false, preserveDrawingBuffer:false, preferWebGl2:true };
+        window.SCRIPTS = [139011507,139011508,139011509,139011510,139011511,139011512,139011513];
+        window.CONFIG_FILENAME = window.ASSET_PREFIX + "config.json?v=1";
+        window.INPUT_SETTINGS = { useKeyboard:true, useMouse:true, useGamepads:false, useTouch:true };
+
+        pc.script.legacy = false;
+
+        // -------------------------------
+        // Ammo preload (URLs fixed)
+        // -------------------------------
+        window.PRELOAD_MODULES = [
+            {
+                moduleName: 'Ammo',
+                glueUrl: "files/assets/139011543/1/ammo.wasm.js",
+                wasmUrl: "files/assets/139011544/1/ammo.wasm.wasm",
+                fallbackUrl: "files/assets/139011542/1/ammo.js",
+                preload: true,
+                onError: () => console.warn('Ammo failed to load, skipping physics.')
+            }
+        ];
+
+        // -------------------------------
+        // Resume AudioContext on user gesture
+        // -------------------------------
+        (function attachAudioResume() {
+            function resumeAudio() {
+                try {
+                    const ac = window.AudioContext || window.webkitAudioContext;
+                    if (ac && window.__pc_audio_context && window.__pc_audio_context.state === 'suspended') {
+                        window.__pc_audio_context.resume();
+                    }
+                } catch(e){}
+                window.removeEventListener('click', resumeAudio);
+                window.removeEventListener('keydown', resumeAudio);
+            }
+            window.addEventListener('click', resumeAudio, {once:true});
+            window.addEventListener('keydown', resumeAudio, {once:true});
+        })();
+    </script>
+</head>
+<body>
+    <!-- Game scripts -->
+    <script src="https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/modules.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/start.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/loading.js"></script>
+
+    <script>
+        // -------------------------------
+        // Safe startApp + load assets-cdn.json
+        // -------------------------------
+        (function safeStartApp() {
+            const MAX_RETRIES = 20;
+            let retries = 0;
+
+            async function tryStart() {
+                if (typeof window.startApp === 'function') {
+                    console.log("startApp found, initializing...");
+
+                    let assetsList = [];
+                    try {
+                        const res = await fetch("https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/assets-cdn.json");
+                        if (res.ok) assetsList = await res.json();
+                        else console.warn('assets-cdn.json not found.');
+                    } catch(e) {
+                        console.warn('Failed to fetch assets-cdn.json.', e);
+                    }
+
+                    window.startApp({
+                        onReady: function(app) {
+                            console.log("PlayCanvas ready!");
+                            assetsList.forEach(asset => {
+                                const assetObj = new pc.Asset(asset.name, 'container', {url: "https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/slice-master/" + asset.url});
+                                app.assets.add(assetObj);
+                                assetObj.ready(() => {
+                                    const entity = new pc.Entity();
+                                    entity.addComponent('model', {type:'asset', asset:assetObj});
+                                    app.root.addChild(entity);
+                                    console.log(`${asset.name} loaded`);
+                                });
+                                assetObj.on('error', () => {}); // ignore silently
+                                app.assets.load(assetObj);
+                            });
+                        }
+                    });
+                } else {
+                    retries++;
+                    if (retries < MAX_RETRIES) setTimeout(tryStart, 500);
+                    else console.warn("startApp not found after retries.");
+                }
+            }
+
+            tryStart();
+        })();
+    </script>
+</body>
+</html>
