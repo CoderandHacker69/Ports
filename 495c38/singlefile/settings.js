@@ -1,4 +1,4 @@
-var baseUrl = 'https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports@fix-branch-name/495c38/singlefile/';
+var baseUrl = 'https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/495c38/singlefile/';
 
 window.ASSET_PREFIX = baseUrl;
 window.SCRIPT_PREFIX = baseUrl;
