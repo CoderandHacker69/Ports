@@ -20,5 +20,5 @@ window.INPUT_SETTINGS = {
 };
 pc.script.legacy = false;
 window.PRELOAD_MODULES = [
-    {'moduleName' : 'Ammo', 'glueUrl' : 'files/assets/139011543/1/ammo.wasm.js', 'wasmUrl' : 'files/assets/139011544/1/ammo.wasm.wasm', 'preload' : true},
+    {'moduleName' : 'Ammo', 'glueUrl' : 'files/assets/139011543/1/ammo.wasm.js', 'wasmUrl' : 'files/assets/139011544/1/ammo.wasm.wasm', 'fallbackUrl' : 'files/assets/139011543/1/ammo.wasm.js', 'preload' : true},
 ];
