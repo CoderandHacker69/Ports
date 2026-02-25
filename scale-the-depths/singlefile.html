@@ -2,14 +2,11 @@
 <html lang="en-us">
 <head>
   <meta charset="utf-8">
-  <title>Scale the Depths (Split WASM + Brotli FIXED)</title>
+  <title>Scale the Depths (Split WASM, Framework JS)</title>
   <style>
-    body { margin: 0; background: black; }
+    body { margin:0; background:black; }
     #unity-container { width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; }
   </style>
-
-  <!-- Brotli decoder that exposes BrotliDecode -->
-  <script src="https://cdn.jsdelivr.net/npm/brotli-dec-wasm@1.4.1/brotli-dec-wasm.min.js"></script>
 </head>
 <body>
   <div id="unity-container">
@@ -22,7 +19,7 @@
 
     function log(...args){ console.log("[UNITY]", ...args); }
 
-    async function fetchFile(url) {
+    async function fetchFile(url){
       log("Fetching:", url);
       const res = await fetch(url);
       if(!res.ok) throw new Error("Failed to fetch "+url);
@@ -31,6 +28,7 @@
 
     function toBlobURL(buffer,type){ return URL.createObjectURL(new Blob([buffer],{type})); }
 
+    // Merge split WASM
     async function buildWasm(){
       log("Fetching WASM parts...");
       const part1 = await fetchFile(BASE+"PWA Build 2.wasm.br.part1");
@@ -42,20 +40,12 @@
       return toBlobURL(merged,"application/wasm");
     }
 
-    async function buildFramework(){
-      log("Fetching framework...");
-      const compressed = await fetchFile(BASE+"PWA Build 2.framework.js.br");
-      log("Decompressing framework...");
-      const decompressed = BrotliDecode(compressed); // ✅ works now
-      return toBlobURL(decompressed,"application/javascript");
-    }
-
     async function start(){
       try{
-        // load loader first
+        // Load Unity loader
         await new Promise((resolve,reject)=>{
           const s=document.createElement("script");
-          s.src=BASE+"PWA Build 2.loader.js";
+          s.src=BASE+"PWA_Build_2.loader.js";
           s.onload=resolve;
           s.onerror=()=>reject("Loader failed");
           document.body.appendChild(s);
@@ -65,7 +55,7 @@
         log("Loader ready");
 
         const wasmUrl = await buildWasm();
-        const frameworkUrl = await buildFramework();
+        const frameworkUrl = BASE+"PWA_Build_2.framework.js"; // raw JS
         const dataUrl = BASE+"PWA Build 2.data.br"; // leave compressed
 
         // WASM streaming fallback
