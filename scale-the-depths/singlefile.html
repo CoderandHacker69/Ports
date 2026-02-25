@@ -1,90 +1,120 @@
 <!DOCTYPE html>
 <html lang="en-us">
 <head>
-  <meta charset="utf-8">
-  <title>Scale the Depths (Split WASM, Framework JS)</title>
-  <style>
-    body { margin:0; background:black; }
-    #unity-container { width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; }
-  </style>
+<meta charset="utf-8">
+<title>Scale the Depths (Stable WebGL)</title>
+<style>
+body { margin:0; background:black; }
+#unity-container { width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; }
+</style>
 </head>
 <body>
-  <div id="unity-container">
-    <canvas id="unity-canvas" width="960" height="600"></canvas>
-  </div>
+<div id="unity-container">
+  <canvas id="unity-canvas" width="960" height="600"></canvas>
+</div>
 
-  <script>
-    const BASE = "https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/scale-the-depths/Build/";
-    const canvas = document.getElementById("unity-canvas");
+<script>
+const canvas = document.getElementById("unity-canvas");
+function log(...args){ console.log("[UNITY]", ...args); }
 
-    function log(...args){ console.log("[UNITY]", ...args); }
+// --- Backup URLs for all Unity files ---
+const FILES = {
+  loader: [
+    "https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/scale-the-depths/Build/PWA_Build_2.loader.js",
+    "https://raw.githubusercontent.com/CoderandHacker69/Ports/main/scale-the-depths/Build/PWA_Build_2.loader.js",
+    "https://another-backup.example.com/PWA_Build_2.loader.js"
+  ],
+  framework: [
+    "https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/scale-the-depths/Build/PWA_Build_2.framework.js",
+    "https://raw.githubusercontent.com/CoderandHacker69/Ports/main/scale-the-depths/Build/PWA_Build_2.framework.js",
+    "https://another-backup.example.com/PWA_Build_2.framework.js"
+  ],
+  data: [
+    "https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/scale-the-depths/Build/PWA_Build_2.data.br",
+    "https://raw.githubusercontent.com/CoderandHacker69/Ports/main/scale-the-depths/Build/PWA_Build_2.data.br",
+    "https://another-backup.example.com/PWA_Build_2.data.br"
+  ],
+  wasm: [
+    "https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/scale-the-depths/Build/PWA_Build_2.wasm.br",
+    "https://raw.githubusercontent.com/CoderandHacker69/Ports/main/scale-the-depths/Build/PWA_Build_2.wasm.br",
+    "https://another-backup.example.com/PWA_Build_2.wasm.br"
+  ]
+};
 
-    async function fetchFile(url){
-      log("Fetching:", url);
+// --- Load a JS script from backups ---
+async function loadScriptBackup(urls){
+  for(const url of urls){
+    try{
+      await new Promise((resolve,reject)=>{
+        const s = document.createElement("script");
+        s.src = url;
+        s.onload = () => { log("Loaded script:", url); resolve(); };
+        s.onerror = () => { log("Failed to load script backup:", url); reject(); };
+        document.body.appendChild(s);
+      });
+      return;
+    }catch(e){}
+  }
+  throw new Error("All script backups failed: " + urls[0]);
+}
+
+// --- Pick first available file URL for loader config ---
+async function fetchFirstAvailable(urls){
+  for(const url of urls){
+    try{
       const res = await fetch(url);
-      if(!res.ok) throw new Error("Failed to fetch "+url);
-      return new Uint8Array(await res.arrayBuffer());
-    }
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      log("Fetched file:", url);
+      return url;
+    }catch(e){ log("Failed to fetch file:", url, e.message); }
+  }
+  throw new Error("All backups failed: "+urls[0]);
+}
 
-    function toBlobURL(buffer,type){ return URL.createObjectURL(new Blob([buffer],{type})); }
+// --- Start Unity ---
+async function start(){
+  try{
+    // 1. Load loader first
+    await loadScriptBackup(FILES.loader);
+    if(typeof createUnityInstance!=="function") throw new Error("Unity loader not ready");
+    log("Loader ready");
 
-    // Merge split WASM
-    async function buildWasm(){
-      log("Fetching WASM parts...");
-      const part1 = await fetchFile(BASE+"PWA Build 2.wasm.br.part1");
-      const part2 = await fetchFile(BASE+"PWA Build 2.wasm.br.part2");
-      const merged = new Uint8Array(part1.length+part2.length);
-      merged.set(part1,0);
-      merged.set(part2,part1.length);
-      log("WASM merged");
-      return toBlobURL(merged,"application/wasm");
-    }
+    // 2. Pick first available WASM, framework, data URLs
+    const wasmUrl = await fetchFirstAvailable(FILES.wasm);
+    const frameworkUrl = await fetchFirstAvailable(FILES.framework);
+    const dataUrl = await fetchFirstAvailable(FILES.data);
 
-    async function start(){
-      try{
-        // Load Unity loader
-        await new Promise((resolve,reject)=>{
-          const s=document.createElement("script");
-          s.src=BASE+"PWA_Build_2.loader.js";
-          s.onload=resolve;
-          s.onerror=()=>reject("Loader failed");
-          document.body.appendChild(s);
-        });
+    // 3. WASM streaming fallback
+    WebAssembly.instantiateStreaming = async(respPromise, imports)=>{
+      log("Using WASM fallback");
+      const resp = await respPromise;
+      const buffer = await resp.arrayBuffer();
+      return WebAssembly.instantiate(buffer, imports);
+    };
 
-        if(typeof createUnityInstance!=="function") throw new Error("Unity loader not ready");
-        log("Loader ready");
+    // 4. Unity config
+    const config = {
+      codeUrl: wasmUrl,
+      frameworkUrl,
+      dataUrl,
+      streamingAssetsUrl:"StreamingAssets",
+      companyName:"Glass Gecko Games",
+      productName:"Scale the Depths",
+      productVersion:"1.0"
+    };
 
-        const wasmUrl = await buildWasm();
-        const frameworkUrl = BASE+"PWA_Build_2.framework.js"; // raw JS
-        const dataUrl = BASE+"PWA Build 2.data.br"; // leave compressed
+    log("Starting Unity...");
+    createUnityInstance(canvas, config, progress => log("Loading:", Math.round(progress*100)+"%"))
+      .then(()=>log("Unity loaded successfully 🎉"))
+      .catch(err=>{ console.error(err); alert("Unity crash: "+err.message); });
 
-        // WASM streaming fallback
-        WebAssembly.instantiateStreaming=async(respPromise,imports)=>{
-          log("Using WASM fallback");
-          const resp = await respPromise;
-          const buffer = await resp.arrayBuffer();
-          return WebAssembly.instantiate(buffer,imports);
-        };
+  }catch(e){
+    console.error("FATAL:", e);
+    alert("FAILED: "+e);
+  }
+}
 
-        const config = {
-          dataUrl,
-          frameworkUrl,
-          codeUrl: wasmUrl,
-          streamingAssetsUrl:"StreamingAssets",
-          companyName:"Glass Gecko Games",
-          productName:"Scale the Depths",
-          productVersion:"1.0"
-        };
-
-        log("Starting Unity...");
-        createUnityInstance(canvas,config,(progress)=>{ log("Loading:",Math.round(progress*100)+"%"); })
-        .then(()=>log("Unity loaded successfully 🎉"))
-        .catch(err=>{console.error(err);alert("Unity crash: "+err.message);});
-
-      }catch(e){ console.error("FATAL:",e); alert("FAILED: "+e); }
-    }
-
-    start();
-  </script>
+start();
+</script>
 </body>
 </html>
