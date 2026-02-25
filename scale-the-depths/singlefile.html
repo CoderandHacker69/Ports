@@ -1,105 +1,144 @@
 <!DOCTYPE html>
 <html lang="en-us">
-  <head>
-	  <base href="https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/scale-the-depths/"
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity WebGL Player | Scale the Depths</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="stylesheet" href="TemplateData/style.css">
-    <link rel="manifest" href="manifest.webmanifest">
-  </head>
-  <body>
-    <div id="unity-container">
-      <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
-      <div id="unity-loading-bar">
-        <div id="unity-logo"></div>
-        <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
-        </div>
-      </div>
-      <div id="unity-warning"> </div>
-    </div>
-    <script>
-      window.addEventListener("load", function () {
-        if ("serviceWorker" in navigator) {
-          navigator.serviceWorker.register("ServiceWorker.js");
-        }
-      });
+<head>
+  <meta charset="utf-8">
+  <title>Scale the Depths (Brotli Hack)</title>
 
-      var container = document.querySelector("#unity-container");
-      var canvas = document.querySelector("#unity-canvas");
-      var loadingBar = document.querySelector("#unity-loading-bar");
-      var progressBarFull = document.querySelector("#unity-progress-bar-full");
-      var warningBanner = document.querySelector("#unity-warning");
+  <style>
+    body { margin: 0; background: black; }
+    #unity-container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
 
-      // Shows a temporary message banner/ribbon for a few seconds, or
-      // a permanent error message on top of the canvas if type=='error'.
-      // If type=='warning', a yellow highlight color is used.
-      // Modify or remove this function to customize the visually presented
-      // way that non-critical warnings and error messages are presented to the
-      // user.
-      function unityShowBanner(msg, type) {
-        function updateBannerVisibility() {
-          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
-        }
-        var div = document.createElement('div');
-        div.innerHTML = msg;
-        warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
-            warningBanner.removeChild(div);
-            updateBannerVisibility();
-          }, 5000);
-        }
-        updateBannerVisibility();
+  <!-- ✅ WORKING Brotli (browser version) -->
+  <script src="https://cdn.jsdelivr.net/npm/brotli@1.3.2/browser.js"></script>
+</head>
+
+<body>
+  <div id="unity-container">
+    <canvas id="unity-canvas" width="960" height="600"></canvas>
+  </div>
+
+  <script>
+    const BASE = "https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/scale-the-depths/Build/";
+    const canvas = document.getElementById("unity-canvas");
+
+    function log(...args) {
+      console.log("[UNITY HACK]", ...args);
+    }
+
+    async function fetchFile(url) {
+      log("Fetching:", url);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Fetch failed: " + url);
+      return new Uint8Array(await res.arrayBuffer());
+    }
+
+    async function fetchAndDecompress(url) {
+      const buffer = await fetchFile(url);
+
+      try {
+        log("Decompressing:", url);
+        return window.brotli.decompress(buffer);
+      } catch (e) {
+        log("Decompression failed, using raw:", url);
+        return buffer; // fallback
       }
+    }
 
-      var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/PWA Build 2.loader.js";
-      var config = {
-        dataUrl: buildUrl + "/PWA Build 2.data.br",
-        frameworkUrl: buildUrl + "/PWA Build 2.framework.js.br",
-        codeUrl: buildUrl + "/PWA Build 2.wasm.br",
-        streamingAssetsUrl: "StreamingAssets",
-        companyName: "Glass Gecko Games",
-        productName: "Scale the Depths",
-        productVersion: "1.0",
-        showBanner: unityShowBanner,
-      };
+    function toBlobURL(buffer, type) {
+      return URL.createObjectURL(new Blob([buffer], { type }));
+    }
 
-      // By default Unity keeps WebGL canvas render target size matched with
-      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-      // Set this to false if you want to decouple this synchronization from
-      // happening inside the engine, and you would instead like to size up
-      // the canvas DOM size and WebGL render target sizes yourself.
-      // config.matchWebGLToCanvasSize = false;
-
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-      }
-
-      loadingBar.style.display = "block";
-
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = 100 * progress + "%";
-        }).then((unityInstance) => {
-          loadingBar.style.display = "none";
-        }).catch((message) => {
-          alert(message);
+    async function loadUnityHack() {
+      try {
+        // ✅ Load Unity loader FIRST
+        await new Promise((resolve) => {
+          const s = document.createElement("script");
+          s.src = BASE + "PWA Build 2.loader.js";
+          s.onload = () => {
+            log("Loader loaded");
+            resolve();
+          };
+          s.onerror = () => {
+            throw new Error("Failed to load loader.js");
+          };
+          document.body.appendChild(s);
         });
-      };
-      document.body.appendChild(script);
-    </script>
-  </body>
+
+        if (typeof createUnityInstance !== "function") {
+          throw new Error("createUnityInstance missing");
+        }
+
+        // ✅ Patch WASM streaming (REQUIRED)
+        WebAssembly.instantiateStreaming = async (respPromise, imports) => {
+          log("Using WASM fallback");
+          const resp = await respPromise;
+          const buffer = await resp.arrayBuffer();
+          return WebAssembly.instantiate(buffer, imports);
+        };
+
+        // 🔹 Load files (with fallback)
+        const jsData = await fetchAndDecompress(BASE + "PWA Build 2.framework.js.br");
+        const wasmData = await fetchAndDecompress(BASE + "PWA Build 2.wasm.br");
+        const dataData = await fetchAndDecompress(BASE + "PWA Build 2.data.br");
+
+        // 🔹 Convert to URLs
+        const jsUrl = toBlobURL(jsData, "application/javascript");
+        const wasmUrl = toBlobURL(wasmData, "application/wasm");
+        const dataUrl = toBlobURL(dataData, "application/octet-stream");
+
+        log("Blob URLs created");
+
+        // 🔹 Inject framework (backup if loader fails)
+        await new Promise((resolve) => {
+          const script = document.createElement("script");
+          script.src = jsUrl;
+          script.onload = () => {
+            log("Framework loaded");
+            resolve();
+          };
+          script.onerror = () => {
+            log("Framework failed (continuing anyway)");
+            resolve(); // fallback
+          };
+          document.body.appendChild(script);
+        });
+
+        // 🔹 Unity config
+        const config = {
+          dataUrl: dataUrl,
+          codeUrl: wasmUrl,
+          frameworkUrl: jsUrl,
+          streamingAssetsUrl: "StreamingAssets",
+          companyName: "Glass Gecko Games",
+          productName: "Scale the Depths",
+          productVersion: "1.0",
+        };
+
+        log("Starting Unity...");
+
+        createUnityInstance(canvas, config, (progress) => {
+          log("Loading:", Math.round(progress * 100) + "%");
+        }).then(() => {
+          log("Unity loaded successfully 🎉");
+        }).catch((err) => {
+          console.error("Unity failed:", err);
+          alert("Unity crash: " + err.message);
+        });
+
+      } catch (e) {
+        console.error("FATAL:", e);
+        alert("FAILED: " + e.message);
+      }
+    }
+
+    loadUnityHack();
+  </script>
+</body>
 </html>
-<script defer src="htmlgame.js" type="text/javascript"></script>
