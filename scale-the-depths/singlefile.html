@@ -2,23 +2,15 @@
 <html lang="en-us">
 <head>
   <meta charset="utf-8">
-  <title>Scale the Depths (Brotli Hack)</title>
-
+  <title>Scale the Depths (Split WASM + Brotli FIXED)</title>
   <style>
     body { margin: 0; background: black; }
-    #unity-container {
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+    #unity-container { width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; }
   </style>
 
-  <!-- ✅ WORKING Brotli (browser version) -->
-  <script src="https://cdn.jsdelivr.net/npm/brotli@1.3.2/browser.js"></script>
+  <!-- Brotli decoder that exposes BrotliDecode -->
+  <script src="https://cdn.jsdelivr.net/npm/brotli-dec-wasm@1.4.1/brotli-dec-wasm.min.js"></script>
 </head>
-
 <body>
   <div id="unity-container">
     <canvas id="unity-canvas" width="960" height="600"></canvas>
@@ -28,117 +20,81 @@
     const BASE = "https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/scale-the-depths/Build/";
     const canvas = document.getElementById("unity-canvas");
 
-    function log(...args) {
-      console.log("[UNITY HACK]", ...args);
-    }
+    function log(...args){ console.log("[UNITY]", ...args); }
 
     async function fetchFile(url) {
       log("Fetching:", url);
       const res = await fetch(url);
-      if (!res.ok) throw new Error("Fetch failed: " + url);
+      if(!res.ok) throw new Error("Failed to fetch "+url);
       return new Uint8Array(await res.arrayBuffer());
     }
 
-    async function fetchAndDecompress(url) {
-      const buffer = await fetchFile(url);
+    function toBlobURL(buffer,type){ return URL.createObjectURL(new Blob([buffer],{type})); }
 
-      try {
-        log("Decompressing:", url);
-        return window.brotli.decompress(buffer);
-      } catch (e) {
-        log("Decompression failed, using raw:", url);
-        return buffer; // fallback
-      }
+    async function buildWasm(){
+      log("Fetching WASM parts...");
+      const part1 = await fetchFile(BASE+"PWA Build 2.wasm.br.part1");
+      const part2 = await fetchFile(BASE+"PWA Build 2.wasm.br.part2");
+      const merged = new Uint8Array(part1.length+part2.length);
+      merged.set(part1,0);
+      merged.set(part2,part1.length);
+      log("WASM merged");
+      return toBlobURL(merged,"application/wasm");
     }
 
-    function toBlobURL(buffer, type) {
-      return URL.createObjectURL(new Blob([buffer], { type }));
+    async function buildFramework(){
+      log("Fetching framework...");
+      const compressed = await fetchFile(BASE+"PWA Build 2.framework.js.br");
+      log("Decompressing framework...");
+      const decompressed = BrotliDecode(compressed); // ✅ works now
+      return toBlobURL(decompressed,"application/javascript");
     }
 
-    async function loadUnityHack() {
-      try {
-        // ✅ Load Unity loader FIRST
-        await new Promise((resolve) => {
-          const s = document.createElement("script");
-          s.src = BASE + "PWA Build 2.loader.js";
-          s.onload = () => {
-            log("Loader loaded");
-            resolve();
-          };
-          s.onerror = () => {
-            throw new Error("Failed to load loader.js");
-          };
+    async function start(){
+      try{
+        // load loader first
+        await new Promise((resolve,reject)=>{
+          const s=document.createElement("script");
+          s.src=BASE+"PWA Build 2.loader.js";
+          s.onload=resolve;
+          s.onerror=()=>reject("Loader failed");
           document.body.appendChild(s);
         });
 
-        if (typeof createUnityInstance !== "function") {
-          throw new Error("createUnityInstance missing");
-        }
+        if(typeof createUnityInstance!=="function") throw new Error("Unity loader not ready");
+        log("Loader ready");
 
-        // ✅ Patch WASM streaming (REQUIRED)
-        WebAssembly.instantiateStreaming = async (respPromise, imports) => {
+        const wasmUrl = await buildWasm();
+        const frameworkUrl = await buildFramework();
+        const dataUrl = BASE+"PWA Build 2.data.br"; // leave compressed
+
+        // WASM streaming fallback
+        WebAssembly.instantiateStreaming=async(respPromise,imports)=>{
           log("Using WASM fallback");
           const resp = await respPromise;
           const buffer = await resp.arrayBuffer();
-          return WebAssembly.instantiate(buffer, imports);
+          return WebAssembly.instantiate(buffer,imports);
         };
 
-        // 🔹 Load files (with fallback)
-        const jsData = await fetchAndDecompress(BASE + "PWA Build 2.framework.js.br");
-        const wasmData = await fetchAndDecompress(BASE + "PWA Build 2.wasm.br");
-        const dataData = await fetchAndDecompress(BASE + "PWA Build 2.data.br");
-
-        // 🔹 Convert to URLs
-        const jsUrl = toBlobURL(jsData, "application/javascript");
-        const wasmUrl = toBlobURL(wasmData, "application/wasm");
-        const dataUrl = toBlobURL(dataData, "application/octet-stream");
-
-        log("Blob URLs created");
-
-        // 🔹 Inject framework (backup if loader fails)
-        await new Promise((resolve) => {
-          const script = document.createElement("script");
-          script.src = jsUrl;
-          script.onload = () => {
-            log("Framework loaded");
-            resolve();
-          };
-          script.onerror = () => {
-            log("Framework failed (continuing anyway)");
-            resolve(); // fallback
-          };
-          document.body.appendChild(script);
-        });
-
-        // 🔹 Unity config
         const config = {
-          dataUrl: dataUrl,
+          dataUrl,
+          frameworkUrl,
           codeUrl: wasmUrl,
-          frameworkUrl: jsUrl,
-          streamingAssetsUrl: "StreamingAssets",
-          companyName: "Glass Gecko Games",
-          productName: "Scale the Depths",
-          productVersion: "1.0",
+          streamingAssetsUrl:"StreamingAssets",
+          companyName:"Glass Gecko Games",
+          productName:"Scale the Depths",
+          productVersion:"1.0"
         };
 
         log("Starting Unity...");
+        createUnityInstance(canvas,config,(progress)=>{ log("Loading:",Math.round(progress*100)+"%"); })
+        .then(()=>log("Unity loaded successfully 🎉"))
+        .catch(err=>{console.error(err);alert("Unity crash: "+err.message);});
 
-        createUnityInstance(canvas, config, (progress) => {
-          log("Loading:", Math.round(progress * 100) + "%");
-        }).then(() => {
-          log("Unity loaded successfully 🎉");
-        }).catch((err) => {
-          console.error("Unity failed:", err);
-          alert("Unity crash: " + err.message);
-        });
-
-      } catch (e) {
-        console.error("FATAL:", e);
-        alert("FAILED: " + e.message);
-      }
+      }catch(e){ console.error("FATAL:",e); alert("FAILED: "+e); }
     }
 
-    loadUnityHack();
+    start();
   </script>
 </body>
 </html>
