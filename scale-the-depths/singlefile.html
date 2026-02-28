@@ -2,19 +2,27 @@
 <html lang="en-us">
 <head>
 <meta charset="utf-8">
-<title>Scale the Depths (Blob WASM Fix)</title>
+<title>Scale the Depths (aa/ab split)</title>
 <style>
-body { margin:0; background:black; }
+body {
+  margin: 0;
+  background: black;
+  overflow: hidden;
+}
 #unity-container {
-  width:100vw;
-  height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+canvas {
+  background: black;
 }
 </style>
 </head>
 <body>
+
 <div id="unity-container">
   <canvas id="unity-canvas" width="960" height="600"></canvas>
 </div>
@@ -22,19 +30,24 @@ body { margin:0; background:black; }
 <script>
 const canvas = document.getElementById("unity-canvas");
 
-function log(...args){ console.log("[UNITY]", ...args); }
+function log(...args){
+  console.log("[UNITY]", ...args);
+}
 
 // ✅ jsDelivr base
 const BASE = "https://cdn.jsdelivr.net/gh/CoderandHacker69/Ports/scale-the-depths/Build/";
 
+// ✅ FILES (NO .br)
 const FILES = {
   loader: BASE + "PWA_Build_2.loader.js",
   framework: BASE + "PWA_Build_2.framework.js",
   data: BASE + "PWA_Build_2.data",
 
-  // 👇 SPLIT FILES
-  wasm1: BASE + "PWA_Build_2.wasm.part1",
-  wasm2: BASE + "PWA_Build_2.wasm.part2"
+  // 🔥 EXACT FILENAMES YOU HAVE
+  wasmParts: [
+    BASE + "PWA_Build_2.wasm.partaa",
+    BASE + "PWA_Build_2.wasm.partab"
+  ]
 };
 
 // Load script
@@ -42,41 +55,50 @@ function loadScript(url){
   return new Promise((resolve, reject)=>{
     const s = document.createElement("script");
     s.src = url;
-    s.onload = resolve;
-    s.onerror = reject;
+    s.onload = () => {
+      log("Loaded:", url);
+      resolve();
+    };
+    s.onerror = () => reject("Failed to load " + url);
     document.body.appendChild(s);
   });
 }
 
-// 🔥 Combine WASM parts into one Blob URL
+// 🔥 Combine .partaa + .partab into valid WASM
 async function buildWasmBlob(){
   log("Fetching WASM parts...");
 
-  const [res1, res2] = await Promise.all([
-    fetch(FILES.wasm1),
-    fetch(FILES.wasm2)
-  ]);
+  const responses = await Promise.all(
+    FILES.wasmParts.map(url => fetch(url))
+  );
 
-  if(!res1.ok || !res2.ok){
-    throw new Error("Failed to fetch WASM parts");
+  responses.forEach((r, i)=>{
+    if(!r.ok){
+      throw new Error("Failed to fetch part " + i);
+    }
+  });
+
+  const buffers = await Promise.all(
+    responses.map(r => r.arrayBuffer())
+  );
+
+  const totalSize = buffers.reduce((sum, b) => sum + b.byteLength, 0);
+  const combined = new Uint8Array(totalSize);
+
+  let offset = 0;
+  for(const buf of buffers){
+    combined.set(new Uint8Array(buf), offset);
+    offset += buf.byteLength;
   }
 
-  const buf1 = await res1.arrayBuffer();
-  const buf2 = await res2.arrayBuffer();
+  log("WASM combined:", totalSize, "bytes");
 
-  log("Combining WASM...");
-
-  const combined = new Uint8Array(buf1.byteLength + buf2.byteLength);
-  combined.set(new Uint8Array(buf1), 0);
-  combined.set(new Uint8Array(buf2), buf1.byteLength);
-
-  const blob = new Blob([combined], { type: "application/wasm" });
-  const blobUrl = URL.createObjectURL(blob);
-
-  log("WASM Blob ready");
-  return blobUrl;
+  return URL.createObjectURL(
+    new Blob([combined], { type: "application/wasm" })
+  );
 }
 
+// 🚀 Start Unity
 async function start(){
   try{
     log("Loading loader...");
@@ -86,15 +108,14 @@ async function start(){
       throw new Error("Unity loader failed");
     }
 
-    // 🔥 Build WASM from parts
-    const wasmBlobUrl = await buildWasmBlob();
+    const wasmURL = await buildWasmBlob();
 
     log("Starting Unity...");
 
     const config = {
       dataUrl: FILES.data,
       frameworkUrl: FILES.framework,
-      codeUrl: wasmBlobUrl,
+      codeUrl: wasmURL,
       streamingAssetsUrl: "StreamingAssets",
       companyName: "Glass Gecko Games",
       productName: "Scale the Depths",
@@ -105,20 +126,21 @@ async function start(){
       log("Loading:", Math.round(progress * 100) + "%");
     })
     .then(()=>{
-      log("✅ Unity loaded");
+      log("✅ Unity loaded successfully");
     })
-    .catch((err)=>{
+    .catch(err=>{
       console.error(err);
       alert("Unity crash: " + err);
     });
 
   }catch(e){
     console.error(e);
-    alert("FAILED: " + e);
+    alert("FATAL: " + e);
   }
 }
 
 start();
 </script>
+
 </body>
 </html>
